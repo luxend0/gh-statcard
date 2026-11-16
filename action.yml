@@ -1,0 +1,32 @@
+name: gh-statcard
+description: Render a GitHub stats card for a profile README as one static SVG
+branding:
+  icon: bar-chart-2
+  color: gray-dark
+inputs:
+  user:
+    description: GitHub login to render the card for
+    required: true
+  out:
+    description: Path of the SVG to write
+    default: stats.svg
+  orgs:
+    description: Comma-separated organisation logins whose public repos count toward the languages
+    default: ''
+  exclude:
+    description: Comma-separated languages to leave out, e.g. HTML,CSS
+    default: ''
+  token:
+    description: Token for the GitHub GraphQL API; the default workflow token is enough
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SC_USER: ${{ inputs.user }}
+        SC_OUT: ${{ inputs.out }}
+        SC_ORGS: ${{ inputs.orgs }}
+        SC_EXCLUDE: ${{ inputs.exclude }}
+      run: node "$GITHUB_ACTION_PATH/statcard.mjs" --user "$SC_USER" --out "$SC_OUT" --orgs "$SC_ORGS" --exclude "$SC_EXCLUDE"
