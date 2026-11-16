@@ -4,7 +4,8 @@ import { summarize, render } from './statcard.mjs';
 
 const data = { user: {
   pullRequests: { totalCount: 7 },
-  contributionsCollection: { contributionCalendar: { totalContributions: 1234 } },
+  contributionsCollection: { contributionCalendar: { totalContributions: 1234,
+    weeks: Array.from({ length: 53 }, (_, i) => ({ contributionDays: [{ contributionCount: i % 3 }, { contributionCount: 1 }] })) } },
   repositories: { totalCount: 2, nodes: [{ stargazerCount: 3 }, { stargazerCount: 2 }] },
 } };
 
@@ -13,10 +14,13 @@ assert.equal(s.stars, 5);
 assert.equal(s.mergedPRs, 7);
 assert.equal(s.contributions, 1234);
 assert.equal(s.publicRepos, 2);
+assert.equal(s.weeks.length, 53);
+assert.equal(s.weeks[2], 3);
 
 const svg = render(s, 'a<b');
 assert.ok(svg.startsWith('<svg'));
 assert.ok(svg.includes('1,234'));
 assert.ok(svg.includes('a&lt;b') && !svg.includes('a<b'));
 assert.ok(svg.includes('prefers-color-scheme:dark'), 'dark palette present');
+assert.equal((svg.match(/class="[bz]"/g) || []).length, 52, 'one bar per week, last 52 weeks');
 console.log('ok');
