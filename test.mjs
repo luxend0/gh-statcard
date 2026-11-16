@@ -18,4 +18,5 @@ const svg = render(s, 'a<b');
 assert.ok(svg.startsWith('<svg'));
 assert.ok(svg.includes('1,234'));
 assert.ok(svg.includes('a&lt;b') && !svg.includes('a<b'));
+assert.ok(svg.includes('prefers-color-scheme:dark'), 'dark palette present');
 console.log('ok');
