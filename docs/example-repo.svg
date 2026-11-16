@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="410" height="120" viewBox="0 0 410 120" role="img" aria-label="testux: Try Linux distros in a window, then boot the live ISO on your PC without a USB stick">
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:#171717}
+.t{font-size:15px;font-weight:700}.d{font-size:12px;fill:#525252}.m{font-size:11px;fill:#737373}
+.bg{fill:#fff;stroke:#e5e5e5}.a{fill:#3b82f6}.g{fill:#737373}
+@media (prefers-color-scheme:dark){text{fill:#e5e5e5}.d{fill:#a3a3a3}.m{fill:#8b8b8b}.bg{fill:#0d1117;stroke:#30363d}.g{fill:#8b8b8b}}
+</style>
+<rect x="0.5" y="0.5" width="409" height="119" rx="6" class="bg"/>
+<text x="24" y="36" class="t">testux</text>
+<text x="24" y="62" class="d">Try Linux distros in a window, then boot the live</text><text x="24" y="80" class="d">ISO on your PC without a USB stick</text>
+<rect x="24" y="96" width="8" height="8" class="a"/><text x="37" y="104" class="m">C++</text><path transform="translate(74.8 94) scale(.5)" class="g" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z"/><text x="90.8" y="104" class="m">0</text><path transform="translate(115.4 94) scale(.5)" class="g" d="M6 3a3 3 0 0 0-1 5.8v6.4a3 3 0 1 0 2 0V13h7a3 3 0 0 0 3-3V8.8a3 3 0 1 0-2 0V10a1 1 0 0 1-1 1H7V8.8A3 3 0 0 0 6 3z"/><text x="131.4" y="104" class="m">0</text><text x="156" y="104" class="m">GPL-3.0</text>
+</svg>
