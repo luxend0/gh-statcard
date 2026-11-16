@@ -20,16 +20,32 @@ export function query(orgs = []) {
 }`;
 }
 
-export async function fetchData(login, token, orgs = []) {
+async function gql(q, variables, token) {
   const r = await fetch('https://api.github.com/graphql', {
     method: 'POST',
     headers: { Authorization: `bearer ${token}`, 'User-Agent': 'gh-statcard' },
-    body: JSON.stringify({ query: query(orgs), variables: { login } }),
+    body: JSON.stringify({ query: q, variables }),
   });
   const j = await r.json();
   if (!r.ok || j.errors) throw new Error(JSON.stringify(j.errors || j).slice(0, 300));
-  if (!j.data.user) throw new Error(`no such user: ${login}`);
   return j.data;
+}
+
+export async function fetchData(login, token, orgs = []) {
+  const d = await gql(query(orgs), { login }, token);
+  if (!d.user) throw new Error(`no such user: ${login}`);
+  return d;
+}
+
+export const REPO_QUERY = `query($owner:String!,$name:String!){repository(owner:$owner,name:$name){
+  name description stargazerCount forkCount primaryLanguage{name} licenseInfo{spdxId}}}`;
+
+export async function fetchRepo(full, token) {
+  const [owner, name] = full.split('/');
+  if (!owner || !name) throw new Error(`expected owner/name, got: ${full}`);
+  const d = await gql(REPO_QUERY, { owner, name }, token);
+  if (!d.repository) throw new Error(`no such repo: ${full}`);
+  return d.repository;
 }
 
 // Language share by bytes over the user's public repos plus the given orgs' public repos.
@@ -104,18 +120,71 @@ ${legend}
 `;
 }
 
+// Greedy word wrap to `max` characters, at most `lines` lines; the last line ends in "..." if cut.
+export function wrap(text, max, lines) {
+  const out = [];
+  let cur = '';
+  for (const w of String(text || '').split(/\s+/).filter(Boolean)) {
+    if (cur && (cur + ' ' + w).length > max) { out.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w;
+  }
+  if (cur) out.push(cur);
+  if (out.length > lines) {
+    out.length = lines;
+    const last = out[lines - 1];
+    out[lines - 1] = (last.length > max - 3 ? last.slice(0, max - 3) : last) + '...';
+  }
+  return out.map(l => (l.length > max ? l.slice(0, max - 3) + '...' : l));
+}
+
+// A pinned-repo style card: name, description, language, stars, forks, license.
+export function renderRepo(r) {
+  const W = 410, H = 120, P = 24;
+  const desc = wrap(r.description || 'No description', 50, 2)
+    .map((l, i) => `<text x="${P}" y="${62 + i * 18}" class="d">${esc(l)}</text>`).join('');
+  const meta = [];
+  let x = P;
+  if (r.primaryLanguage) {
+    meta.push(`<rect x="${x}" y="96" width="8" height="8" class="a"/><text x="${x + 13}" y="104" class="m">${esc(r.primaryLanguage.name)}</text>`);
+    x += 13 + r.primaryLanguage.name.length * 6.6 + 18;
+  }
+  // star and fork glyphs drawn as paths, so they never depend on a font
+  meta.push(`<path transform="translate(${x} 94) scale(.5)" class="g" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z"/><text x="${x + 16}" y="104" class="m">${fmt(r.stargazerCount)}</text>`);
+  x += 16 + fmt(r.stargazerCount).length * 6.6 + 18;
+  meta.push(`<path transform="translate(${x} 94) scale(.5)" class="g" d="M6 3a3 3 0 0 0-1 5.8v6.4a3 3 0 1 0 2 0V13h7a3 3 0 0 0 3-3V8.8a3 3 0 1 0-2 0V10a1 1 0 0 1-1 1H7V8.8A3 3 0 0 0 6 3z"/><text x="${x + 16}" y="104" class="m">${fmt(r.forkCount)}</text>`);
+  x += 16 + fmt(r.forkCount).length * 6.6 + 18;
+  const lic = r.licenseInfo?.spdxId;
+  if (lic && lic !== 'NOASSERTION') meta.push(`<text x="${x}" y="104" class="m">${esc(lic)}</text>`);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(r.name)}: ${esc(r.description || '')}">
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:#171717}
+.t{font-size:15px;font-weight:700}.d{font-size:12px;fill:#525252}.m{font-size:11px;fill:#737373}
+.bg{fill:#fff;stroke:#e5e5e5}.a{fill:#3b82f6}.g{fill:#737373}
+@media (prefers-color-scheme:dark){text{fill:#e5e5e5}.d{fill:#a3a3a3}.m{fill:#8b8b8b}.bg{fill:#0d1117;stroke:#30363d}.g{fill:#8b8b8b}}
+</style>
+<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="6" class="bg"/>
+<text x="${P}" y="36" class="t">${esc(r.name)}</text>
+${desc}
+${meta.join('')}
+</svg>
+`;
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { values: o } = parseArgs({ options: {
     user: { type: 'string' }, out: { type: 'string', default: 'stats.svg' },
     orgs: { type: 'string', default: '' }, exclude: { type: 'string', default: '' },
+    repo: { type: 'string' },
   } });
   const list = v => v.split(',').map(x => x.trim()).filter(Boolean);
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-  if (!o.user || !token) {
-    console.error('usage: GH_TOKEN=... node statcard.mjs --user <login> [--out stats.svg] [--orgs a,b] [--exclude HTML,CSS]');
+  if (!(o.user || o.repo) || !token) {
+    console.error('usage: GH_TOKEN=... node statcard.mjs --user <login> [--out stats.svg] [--orgs a,b] [--exclude HTML,CSS]\n' +
+      '       GH_TOKEN=... node statcard.mjs --repo <owner/name> [--out repo.svg]');
     process.exit(2);
   }
-  const svg = render(summarize(await fetchData(o.user, token, list(o.orgs)), list(o.exclude)), o.user);
+  const svg = o.repo
+    ? renderRepo(await fetchRepo(o.repo, token))
+    : render(summarize(await fetchData(o.user, token, list(o.orgs)), list(o.exclude)), o.user);
   writeFileSync(o.out + '.tmp', svg);
   renameSync(o.out + '.tmp', o.out); // atomic swap: a web server never serves half a file
   console.log('wrote', o.out);

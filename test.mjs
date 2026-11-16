@@ -1,6 +1,6 @@
 // node test.mjs - checks summarize() and render() on fake API data, no network
 import assert from 'node:assert/strict';
-import { summarize, render, query } from './statcard.mjs';
+import { summarize, render, query, wrap, renderRepo } from './statcard.mjs';
 
 const lang = (name, size) => ({ size, node: { name } });
 
@@ -35,4 +35,15 @@ assert.ok(svg.includes('a&lt;b') && !svg.includes('a<b'));
 assert.ok(svg.includes('&lt;x&amp;y&gt;') && !svg.includes('<x&y>'), 'language names escaped');
 assert.ok(svg.includes('prefers-color-scheme:dark'), 'dark palette present');
 assert.equal((svg.match(/class="[bz]"/g) || []).length, 52, 'one bar per week, last 52 weeks');
+
+// repo cards
+assert.deepEqual(wrap('one two three', 7, 2), ['one two', 'three']);
+assert.deepEqual(wrap('aaaa bbbb cccc dddd eeee', 9, 2), ['aaaa bbbb', 'cccc d...']);
+assert.deepEqual(wrap('', 10, 2), []);
+const card = renderRepo({ name: 'x<y', description: 'Does <things> & more', stargazerCount: 1200, forkCount: 3,
+  primaryLanguage: { name: 'Go' }, licenseInfo: { spdxId: 'MIT' } });
+assert.ok(card.includes('x&lt;y') && card.includes('&lt;things&gt; &amp; more') && !card.includes('<things>'));
+assert.ok(card.includes('1,200') && card.includes('>Go<') && card.includes('>MIT<'));
+assert.ok(!renderRepo({ name: 'n', description: null, stargazerCount: 0, forkCount: 0, primaryLanguage: null,
+  licenseInfo: { spdxId: 'NOASSERTION' } }).includes('NOASSERTION'));
 console.log('ok');
