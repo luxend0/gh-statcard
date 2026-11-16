@@ -1,0 +1,10 @@
+{
+  "name": "gh-statcard",
+  "version": "0.1.0",
+  "description": "GitHub stats card as one static SVG, no server, no dependencies",
+  "type": "module",
+  "bin": { "gh-statcard": "statcard.mjs" },
+  "scripts": { "test": "node test.mjs" },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}
