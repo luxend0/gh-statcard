@@ -53,6 +53,7 @@ export function render(s, login) {
 text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:#171717}
 .t{font-size:15px;font-weight:700}.n{font-size:20px;font-weight:700}.m{font-size:11px;fill:#737373}
 .bg{fill:#fff;stroke:#e5e5e5}
+@media (prefers-color-scheme:dark){text{fill:#e5e5e5}.m{fill:#8b8b8b}.bg{fill:#0d1117;stroke:#30363d}}
 </style>
 <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="6" class="bg"/>
 <text x="${P}" y="36" class="t">${esc(login)}</text><text x="${W - P}" y="36" class="m" text-anchor="end">last 12 months</text>
